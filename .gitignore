@@ -4,4 +4,4 @@
 *.log
 *.pdf
 *.tex
-
+*.pyc
