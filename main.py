@@ -1,7 +1,8 @@
 import re
+import sys
 from modules import calculate, view
 
-file = open('test.markdown', 'r').read()
+file = open(sys.argv[1], 'r').read()
 block = file.split("\n\n")
 state = {
     'blablabla' : {
