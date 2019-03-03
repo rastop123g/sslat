@@ -5,3 +5,4 @@
 *.pdf
 *.tex
 *.pyc
+modules/__pycache__/calculate.cpython-37.pyc

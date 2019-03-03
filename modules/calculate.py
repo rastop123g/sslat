@@ -1,9 +1,9 @@
 import re
+import math
 from . import view
 
 def strtolatex(f, state):
     name, exp = init(f,state)                               # создание элемента словаря если его нету
-    #print(name + '\n' + exp)
     endresult = exp                                         # Вычисление формулы
     while True:                                             #
         if is_digit(endresult):                             #
@@ -11,7 +11,6 @@ def strtolatex(f, state):
             break                                           #
         else:                                               #
             endresult = calc(endresult, state)              #
-            print('endresult >' + str(endresult))           #
     retstr = finalstr(name, exp, state)
     return retstr
 
@@ -63,88 +62,76 @@ def init(f, state):
 
 def calc(exp, state):
     if re.search(r'\W\([^()]+\)', exp) is not None: # скобки
-        arr = re.findall(r'\W\(([^()]+)\)', exp)
-        num = []
-        for i, ilst in enumerate(arr):
-            print(str(i) + '>' + ilst)
-            num.append(calc(ilst, state))
-            num[i] = num[i].strip()
-            if is_digit(num[i]):
-                return exp.replace('(' + arr[i] + ')', str(num[i]))
-            else:
-                return exp.replace('(' + arr[i] + ')', '(' + num[i] + ')')
-        #print('tmp: ', arr)
-        #print('exp:' + exp)
-    elif re.search(r'sqrt\(.+\)', exp) is not None: # корень
-        arr = re.findall(r'sqrt\(([^()]+)\)', exp)
-        num = []
-        for i, ilst in enumerate(arr):
-            print(str(i) + '>' + ilst)
-            num.append(calc(ilst, state))
-            num[i] = num[i].strip()
-            if is_digit(num[i]):
-                sq = float(num[i]) ** 0.5
-                return exp.replace('sqrt(' + arr[i] + ')', str(sq))
-            else:
-                return exp.replace('sqrt(' + arr[i] + ')', 'sqrt(' + num[i] + ')')
+        s = re.search(r'\W(\(([^()]+)\))', exp)
+        val = calc(s.group(2), state).strip()
+        if is_digit(val):
+            return exp.replace(s.group(1), str(val))
+        else:
+            return exp.replace(s.group(1), '(' + str(val) + ')')
+    elif re.search(r'sqrt\([^()]+\)', exp) is not None: # корень
+        s = re.search(r'sqrt\(([^()]+)\)', exp)
+        val = calc(s.group(1), state).strip()
+        if is_digit(val):
+            sq = float(val) ** 0.5
+            return exp.replace(s.group(0), str(sq))
+        else:
+            return exp.replace(s.group(0), 'sqrt(' + str(val) + ')')
+    elif re.search(r'ln\([^()]+\)', exp) is not None: # корень
+        s = re.search(r'ln\(([^()]+)\)', exp)
+        val = calc(s.group(1), state).strip()
+        if is_digit(val):
+            sq = math.log(float(val))
+            return exp.replace(s.group(0), str(sq))
+        else:
+            return exp.replace(s.group(0), 'ln(' + str(val) + ')')
     elif re.search(r'\w+\.?\d*\*{2}\w+\.?\d*', exp) is not None: # степень
         s = re.search(r'(\w+\.?\d*\*{2}\w+\.?\d*)', exp).group(0)
         numsplit = s.split('**')
-        print(s)
         for i, var in enumerate(numsplit):
             if is_digit(var):
                 numsplit[i] = float(var)
             else:
                 numsplit[i] = float(getvalue(var, state))
-        print(numsplit)
         val = numsplit[0] ** numsplit[1]
         return exp.replace(s, str(val))
     elif re.search(r'\w+\.?\d*/\w+\.?\d*', exp) is not None: # деление
         s = re.search(r'(\w+\.?\d*/\w+\.?\d*)', exp).group(0)
-        print(s)
         numsplit = s.split('/')
         for i, var in enumerate(numsplit):
             if is_digit(var):
                 numsplit[i] = float(var)
             else:
                 numsplit[i] = float(getvalue(var, state))
-        print(numsplit)
         val = numsplit[0] / numsplit[1]
         return exp.replace(s, str(val))
     elif re.search(r'\w+\.?\d*\*\w+\.?\d*', exp) is not None: # умножение
         s = re.search(r'(\w+\.?\d*\*\w+\.?\d*)', exp).group(0)
-        print(s)
         numsplit = s.split('*')
         for i, var in enumerate(numsplit):
             if is_digit(var):
                 numsplit[i] = float(var)
             else:
                 numsplit[i] = float(getvalue(var, state))
-        print(numsplit)
         val = numsplit[0] * numsplit[1]
         return exp.replace(s, str(val))
     elif re.search(r'\w+\.?\d*\+\w+\.?\d*', exp) is not None: # сложение
         s = re.search(r'(\w+\.?\d*\+\w+\.?\d*)', exp).group(0)
-        print(s)
         numsplit = s.split('+')
         for i, var in enumerate(numsplit):
             if is_digit(var):
                 numsplit[i] = float(var)
             else:
                 numsplit[i] = float(getvalue(var, state))
-        print(numsplit)
         val = numsplit[0] + numsplit[1]
         return exp.replace(s, str(val))
     elif re.search(r'\w+\.?\d*-\w+\.?\d*', exp) is not None: # вычитание
         s = re.search(r'(\w+\.?\d*-\w+\.?\d*)', exp).group(0)
-        print(s)
         numsplit = s.split('-')
         for i, var in enumerate(numsplit):
             if is_digit(var):
                 numsplit[i] = float(var)
             else:
                 numsplit[i] = float(getvalue(var, state))
-        print(numsplit)
         val = numsplit[0] - numsplit[1]
         return exp.replace(s, str(val))
     elif re.search(r'\w+\.?\d*', exp) is not None:
@@ -200,7 +187,6 @@ def finalstr(name, exp, state):
         'a' : 'srtoka'
     }
     exp = exptolatex(exp, tmpdict)
-    print('jaja:' + exp)
     while re.search(r'exp\d+', exp):
         rp = re.search(r'exp\d+', exp).group(0)
         exp = exp.replace(rp, tmpdict[rp])
@@ -225,12 +211,16 @@ def finalstr(name, exp, state):
 def exptolatex(exp, tmpdict): # надо сделать корень
     i = 0
     while True:
-        print(exp)
         if re.search(r'\*\*', exp) is not None: # степень
             exp = exp.replace('**', '^')
         elif re.search(r'sqrtexp\d+', exp) is not None: #корень
             rsobj = re.search(r'(sqrt)(exp\d+)', exp)
             tmpdict['exp' + str(i)] = '\\sqrt{' + tmpdict[rsobj.group(2)][1:-1] + '}'
+            exp = exp.replace(rsobj.group(0), 'exp' + str(i))
+            i += 1
+        elif re.search(r'lnexp\d+', exp) is not None: #корень
+            rsobj = re.search(r'(ln)(exp\d+)', exp)
+            tmpdict['exp' + str(i)] = '\\ln{' + tmpdict[rsobj.group(2)][1:-1] + '}'
             exp = exp.replace(rsobj.group(0), 'exp' + str(i))
             i += 1
         elif re.search(r'\([^()/]+\)', exp) is not None: # скобки
@@ -239,7 +229,6 @@ def exptolatex(exp, tmpdict): # надо сделать корень
             exp = exp.replace(tmpdict['exp' + str(i)], 'exp' + str(i))
             i += 1
         elif re.search(r'\w+\.?\d*/\w+\.?\d*', exp) is not None: # тоже деление
-            print('это первая проверка' + ' > ' + exp)
             rsobj = re.search(r'(\w+\.?\d*)/(\w+\.?\d*)', exp)
             if re.search(r'exp\d+', rsobj.group(1)) is not None:
                 onefr = tmpdict[rsobj.group(1)][1:-1]
@@ -252,13 +241,6 @@ def exptolatex(exp, tmpdict): # надо сделать корень
             tmpdict['exp' + str(i)] = '\\frac{' + onefr + '}{' + twofr + '}'
             exp = exp.replace(rsobj.group(1) + '/' + rsobj.group(2), 'exp' + str(i))
             i += 1
-        #elif re.search(r'exp\d+/exp\d+', exp) is not None: # деление
-        #    print('это 2 проверка' + ' > ' + exp)
-        #    rsobj = re.search(r'(exp\d+)/(exp\d+)', exp)
-        #    tmpdict['exp' + str(i)] = '\\frac{' + tmpdict[rsobj.group(1)][1:-1] + '}{' + tmpdict[rsobj.group(2)][1:-1] + '}'
-        #    exp = exp.replace(rsobj.group(1) + '/' + rsobj.group(2), 'exp' + str(i))
-        #    i += 1
         else:
             break
-    print('tmpdict: ', tmpdict)
     return exp
