@@ -10,6 +10,7 @@ def strtolatex(f, state):
             putvalue(name, float(endresult), state)         #
             break                                           #
         else:                                               #
+            print(endresult)
             endresult = calc(endresult, state)              #
     retstr = finalstr(name, exp, state)
     return retstr
@@ -61,8 +62,9 @@ def init(f, state):
     return (name, exp)
 
 def calc(exp, state):
-    if re.search(r'\W\([^()]+\)', exp) is not None: # скобки
-        s = re.search(r'\W(\(([^()]+)\))', exp)
+    if re.search(r'(?:\W|^)\([^()]+\)', exp) is not None: # скобки
+        s = re.search(r'(?:\W|^)(\(([^()]+)\))', exp)
+        print(s.group(0), s.group(1), s.group(2))
         val = calc(s.group(2), state).strip()
         if is_digit(val):
             return exp.replace(s.group(1), str(val))
@@ -76,7 +78,7 @@ def calc(exp, state):
             return exp.replace(s.group(0), str(sq))
         else:
             return exp.replace(s.group(0), 'sqrt(' + str(val) + ')')
-    elif re.search(r'ln\([^()]+\)', exp) is not None: # корень
+    elif re.search(r'ln\([^()]+\)', exp) is not None: # ln
         s = re.search(r'ln\(([^()]+)\)', exp)
         val = calc(s.group(1), state).strip()
         if is_digit(val):
@@ -135,7 +137,7 @@ def calc(exp, state):
         val = numsplit[0] - numsplit[1]
         return exp.replace(s, str(val))
     elif re.search(r'\w+\.?\d*', exp) is not None:
-        s = re.search(r'\w+\.?\d*', exp)
+        s = re.search(r'\w+\.?\d*', exp).group(0)
         if is_digit(s):
             return exp
         else:
@@ -183,23 +185,26 @@ def numbertols(num): # Перевод числа в latex с округлени�
         return st
 
 def finalstr(name, exp, state):
-    tmpdict = {
-        'a' : 'srtoka'
-    }
+    tmpdict = {}
     exp = exptolatex(exp, tmpdict)
     while re.search(r'exp\d+', exp):
         rp = re.search(r'exp\d+', exp).group(0)
         exp = exp.replace(rp, tmpdict[rp])
     ltexp = exp
     for k in state.keys():
-        regexp = r'(\W)(' + k + r')(\W)'
+        regexp = r'((?:\W|^))(' + k + r')((?:\W|$))'
         findstr = re.search(regexp, ltexp)
         if findstr is not None:
+            print(findstr.group(0))
+            print(findstr.group(1))
+            print(findstr.group(2))
+            print(findstr.group(3))
             ltexp = ltexp.replace(findstr.group(0), findstr.group(1) + state[k]['view'] + findstr.group(3))
     ltexp = ltexp.replace('*', '')
     numexp = exp
     for k in state.keys():
-        regexp = r'(\W?)(' + k + r')(\W?)'
+        print('numexp >' + numexp)
+        regexp = r'((?:\W|^))(' + k + r')((?:\W|$))'
         findstr = re.search(regexp, numexp)
         if findstr is not None:
             numexp = numexp.replace(findstr.group(0), findstr.group(1) + str(numbertols(getvalue(k, state))) + findstr.group(3))

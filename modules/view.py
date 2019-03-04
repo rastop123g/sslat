@@ -14,9 +14,6 @@ def initview_of_sec(vsec, state):
 
 def view(name):
     searchobj = re.search(r'([a-zA-Zа-яА-Я0-9ёЁ]+)_?([a-zA-Zа-яА-Я0-9ёЁ]*)_?([a-zA-Zа-яА-Я0-9ёЁ]*)', name)
-    print('1 group >' + searchobj.group(1))
-    print('2 group >' + searchobj.group(2))
-    print('3 group >' + searchobj.group(3))
     result = '\\text{' + searchobj.group(1) + '}'
     if searchobj.group(3):
         if searchobj.group(3) == 'l':
