@@ -86,8 +86,8 @@ def calc(exp, state):
             return exp.replace(s.group(0), str(sq))
         else:
             return exp.replace(s.group(0), 'ln(' + str(val) + ')')
-    elif re.search(r'\w+\.?\d*\*{2}\w+\.?\d*', exp) is not None: # степень
-        s = re.search(r'(\w+\.?\d*\*{2}\w+\.?\d*)', exp).group(0)
+    elif re.search(r'(?:-|^|)\w+\.?\d*\*{2}(?:-|)\w+\.?\d*', exp) is not None: # степень
+        s = re.search(r'((?:-|^|)\w+\.?\d*\*{2}(?:-|)\w+\.?\d*)', exp).group(0)
         numsplit = s.split('**')
         for i, var in enumerate(numsplit):
             if is_digit(var):
@@ -96,8 +96,8 @@ def calc(exp, state):
                 numsplit[i] = float(getvalue(var, state))
         val = numsplit[0] ** numsplit[1]
         return exp.replace(s, str(val))
-    elif re.search(r'\w+\.?\d*/\w+\.?\d*', exp) is not None: # деление
-        s = re.search(r'(\w+\.?\d*/\w+\.?\d*)', exp).group(0)
+    elif re.search(r'(?:-|^|)\w+\.?\d*/(?:-|)\w+\.?\d*', exp) is not None: # деление
+        s = re.search(r'((?:-|^|)\w+\.?\d*/(?:-|)\w+\.?\d*)', exp).group(0)
         numsplit = s.split('/')
         for i, var in enumerate(numsplit):
             if is_digit(var):
@@ -106,8 +106,8 @@ def calc(exp, state):
                 numsplit[i] = float(getvalue(var, state))
         val = numsplit[0] / numsplit[1]
         return exp.replace(s, str(val))
-    elif re.search(r'\w+\.?\d*\*\w+\.?\d*', exp) is not None: # умножение
-        s = re.search(r'(\w+\.?\d*\*\w+\.?\d*)', exp).group(0)
+    elif re.search(r'(?:-|^|)\w+\.?\d*\*(?:-|)\w+\.?\d*', exp) is not None: # умножение
+        s = re.search(r'((?:-|^|)\w+\.?\d*\*(?:-|)\w+\.?\d*)', exp).group(0)
         numsplit = s.split('*')
         for i, var in enumerate(numsplit):
             if is_digit(var):
@@ -116,8 +116,8 @@ def calc(exp, state):
                 numsplit[i] = float(getvalue(var, state))
         val = numsplit[0] * numsplit[1]
         return exp.replace(s, str(val))
-    elif re.search(r'\w+\.?\d*\+\w+\.?\d*', exp) is not None: # сложение
-        s = re.search(r'(\w+\.?\d*\+\w+\.?\d*)', exp).group(0)
+    elif re.search(r'(?:-|^|)\w+\.?\d*\+(?:-|)\w+\.?\d*', exp) is not None: # сложение
+        s = re.search(r'((?:-|^|)\w+\.?\d*\+(?:-|)\w+\.?\d*)', exp).group(0)
         numsplit = s.split('+')
         for i, var in enumerate(numsplit):
             if is_digit(var):
@@ -126,18 +126,18 @@ def calc(exp, state):
                 numsplit[i] = float(getvalue(var, state))
         val = numsplit[0] + numsplit[1]
         return exp.replace(s, str(val))
-    elif re.search(r'\w+\.?\d*-\w+\.?\d*', exp) is not None: # вычитание
-        s = re.search(r'(\w+\.?\d*-\w+\.?\d*)', exp).group(0)
-        numsplit = s.split('-')
+    elif re.search(r'(?:-|^|)\w+\.?\d*-(?:-|)\w+\.?\d*', exp) is not None: # вычитание
+        s = re.search(r'((?:-|^|)\w+\.?\d*)-((?:-|)\w+\.?\d*)', exp)
+        numsplit = [s.group(1), s.group(2)]
         for i, var in enumerate(numsplit):
             if is_digit(var):
                 numsplit[i] = float(var)
             else:
                 numsplit[i] = float(getvalue(var, state))
         val = numsplit[0] - numsplit[1]
-        return exp.replace(s, str(val))
-    elif re.search(r'\w+\.?\d*', exp) is not None:
-        s = re.search(r'\w+\.?\d*', exp).group(0)
+        return exp.replace(s.group(0), str(val))
+    elif re.search(r'(?:-|^|)\w+\.?\d*', exp) is not None:
+        s = re.search(r'(?:-|^|)\w+\.?\d*', exp).group(0)
         if is_digit(s):
             return exp
         else:
@@ -156,6 +156,9 @@ def is_digit(string): # Является ли строка числом
             return False
 
 def numbertols(num): # Перевод числа в latex с округлением до 3 значащих цифр
+    signed = re.search(r'((?:-|))\d+\.?\d*', str(num)).group(1)
+    print('signed>' + signed)
+    num = str(num).replace(signed, '')
     num = float(num)
     steps = -30
     while True:
@@ -172,17 +175,17 @@ def numbertols(num): # Перевод числа в latex с округлени�
         sm = num / (10 ** (n-1))
         result = round(sm, 2)
         st = str(result) + ' \cdot 10^{' + str(n-1) + '}'
-        return st
+        return str(signed + st)
     elif n >= -1:
         result = round(num, 3 - n)
         if result.is_integer():
-            return str(int(result))
-        return str(result)
+            return str(signed + str(int(result)))
+        return str(signed + str(result))
     else:
         sm = num / (10 ** (n-1))
         result = round(sm, 2)
         st = str(result) + ' \cdot 10^{' + str(n-1) + '}'
-        return st
+        return str(signed + st)
 
 def finalstr(name, exp, state):
     tmpdict = {}
