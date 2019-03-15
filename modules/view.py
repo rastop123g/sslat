@@ -2,7 +2,6 @@ import re
 
 def initview_of_sec(vsec, state):
     arr = vsec.split(',')
-    print(arr)
     for item in arr:
         name = item.split('=')[0].strip()
         elview = item.split('=')[1].strip().replace('"', '')
@@ -10,7 +9,6 @@ def initview_of_sec(vsec, state):
             'view' : elview,
             'value' : [0]
         }
-    print(state)
 
 def view(name):
     searchobj = re.search(r'([a-zA-Zа-яА-Я0-9ёЁ]+)_?([a-zA-Zа-яА-Я0-9ёЁ]*)_?([a-zA-Zа-яА-Я0-9ёЁ]*)', name)

@@ -16,15 +16,12 @@ result_text = []
 for s in block:
     rst = s.replace('\n', '').replace('    ', '').replace('  ', '')
     #rst = s.replace('    ', '').replace('  ', '')
-    print(rst)
     if re.match(r'^#\s', rst) is not None: # обработка заголовков на #
         clearstr = re.findall(r'^#\s*(.+)', rst)
         result_string = r'\section{' + clearstr[0] + '}\n\n'
         result_text.append(result_string)
         del clearstr, result_string
     elif re.match(r'^view{', rst) is not None: # блокировка view
-        #views = re.search(r'^view{(.+)}', rst).group(0)
-        #print('view > ' + views)
         continue
     elif re.match(r'^##\s', rst) is not None: # обработка заголовков на ##
         clearstr = re.findall(r'^##\s*(.+)', rst)
@@ -37,6 +34,8 @@ for s in block:
         result_text.append(result_string)
         del clearstr, result_string
     elif re.match(r'^\s*\w+', rst) is not None: # обработка простого текста 
+        text = re.search(r'^\s*\w+.*', rst).group(0)
+        rst = calculate.var_in_text(text, state)
         result_string = rst + '\n\n'
         result_text.append(result_string)
         del result_string

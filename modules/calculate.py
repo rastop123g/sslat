@@ -6,16 +6,15 @@ def strtolatex(f, state):
     name, exp = init(f,state)                               # создание элемента словаря если его нету
     endresult = exp                                         # Вычисление формулы
     while True:                                             #
+        print('en > ' + endresult)
         if is_digit(endresult):                             #
+            print(name + ' > ' + endresult)
             putvalue(name, float(endresult), state)         #
             break                                           #
         else:                                               #
-            print(endresult)
             endresult = calc(endresult, state)              #
     retstr = finalstr(name, exp, state)
     return retstr
-
-
 
 def checked(name, state):                                   # Функция проверки имени в словаре
     for k in state.keys():
@@ -64,7 +63,6 @@ def init(f, state):
 def calc(exp, state):
     if re.search(r'(?:\W|^)\([^()]+\)', exp) is not None: # скобки
         s = re.search(r'(?:\W|^)(\(([^()]+)\))', exp)
-        print(s.group(0), s.group(1), s.group(2))
         val = calc(s.group(2), state).strip()
         if is_digit(val):
             return exp.replace(s.group(1), str(val))
@@ -95,7 +93,7 @@ def calc(exp, state):
             else:
                 numsplit[i] = float(getvalue(var, state))
         val = numsplit[0] ** numsplit[1]
-        return exp.replace(s, str(val))
+        return exp.replace(s, str('{:.15f}').format(float(val)))
     elif re.search(r'(?:-|^|)\w+\.?\d*/(?:-|)\w+\.?\d*', exp) is not None: # деление
         s = re.search(r'((?:-|^|)\w+\.?\d*/(?:-|)\w+\.?\d*)', exp).group(0)
         numsplit = s.split('/')
@@ -105,7 +103,7 @@ def calc(exp, state):
             else:
                 numsplit[i] = float(getvalue(var, state))
         val = numsplit[0] / numsplit[1]
-        return exp.replace(s, str(val))
+        return exp.replace(s, str('{:.15f}').format(float(val)))
     elif re.search(r'(?:-|^|)\w+\.?\d*\*(?:-|)\w+\.?\d*', exp) is not None: # умножение
         s = re.search(r'((?:-|^|)\w+\.?\d*\*(?:-|)\w+\.?\d*)', exp).group(0)
         numsplit = s.split('*')
@@ -115,7 +113,7 @@ def calc(exp, state):
             else:
                 numsplit[i] = float(getvalue(var, state))
         val = numsplit[0] * numsplit[1]
-        return exp.replace(s, str(val))
+        return exp.replace(s, str('{:.15f}').format(float(val)))
     elif re.search(r'(?:-|^|)\w+\.?\d*\+(?:-|)\w+\.?\d*', exp) is not None: # сложение
         s = re.search(r'((?:-|^|)\w+\.?\d*\+(?:-|)\w+\.?\d*)', exp).group(0)
         numsplit = s.split('+')
@@ -125,7 +123,7 @@ def calc(exp, state):
             else:
                 numsplit[i] = float(getvalue(var, state))
         val = numsplit[0] + numsplit[1]
-        return exp.replace(s, str(val))
+        return exp.replace(s, str('{:.15f}').format(float(val)))
     elif re.search(r'(?:-|^|)\w+\.?\d*-(?:-|)\w+\.?\d*', exp) is not None: # вычитание
         s = re.search(r'((?:-|^|)\w+\.?\d*)-((?:-|)\w+\.?\d*)', exp)
         numsplit = [s.group(1), s.group(2)]
@@ -135,13 +133,13 @@ def calc(exp, state):
             else:
                 numsplit[i] = float(getvalue(var, state))
         val = numsplit[0] - numsplit[1]
-        return exp.replace(s.group(0), str(val))
+        return exp.replace(s.group(0), str('{:.15f}').format(float(val)))
     elif re.search(r'(?:-|^|)\w+\.?\d*', exp) is not None:
         s = re.search(r'(?:-|^|)\w+\.?\d*', exp).group(0)
         if is_digit(s):
             return exp
         else:
-            return exp.replace(s, str(getvalue(s, state)))
+            return exp.replace(s, str('{:.15f}').format(float(getvalue(s, state))))
     
 
 
@@ -157,7 +155,6 @@ def is_digit(string): # Является ли строка числом
 
 def numbertols(num): # Перевод числа в latex с округлением до 3 значащих цифр
     signed = re.search(r'((?:-|))\d+\.?\d*', str(num)).group(1)
-    print('signed>' + signed)
     num = str(num).replace(signed, '')
     num = float(num)
     steps = -30
@@ -198,15 +195,10 @@ def finalstr(name, exp, state):
         regexp = r'((?:\W|^))(' + k + r')((?:\W|$))'
         findstr = re.search(regexp, ltexp)
         if findstr is not None:
-            print(findstr.group(0))
-            print(findstr.group(1))
-            print(findstr.group(2))
-            print(findstr.group(3))
             ltexp = ltexp.replace(findstr.group(0), findstr.group(1) + state[k]['view'] + findstr.group(3))
     ltexp = ltexp.replace('*', '')
     numexp = exp
     for k in state.keys():
-        print('numexp >' + numexp)
         regexp = r'((?:\W|^))(' + k + r')((?:\W|$))'
         findstr = re.search(regexp, numexp)
         if findstr is not None:
@@ -252,3 +244,17 @@ def exptolatex(exp, tmpdict): # надо сделать корень
         else:
             break
     return exp
+
+def var_in_text(text,state):
+    while True:
+        if re.search(r'{\w+=}', text) is not None:
+            sp_exp = re.search(r'{(\w+=)}', text)
+            if re.search(r'(\w+)=', sp_exp.group(1)) is not None:
+                name = re.search(r'(\w+)=', sp_exp.group(1)).group(1)
+                val = float(input('Введите уточненный '+ name + ' > '))
+                putvalue(name, val, state)
+                res_str = state[name]['view'] + ' = ' + str(numbertols(val))
+                text = text.replace(sp_exp.group(0), res_str)
+        else:
+            break
+    return text
