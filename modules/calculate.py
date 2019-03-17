@@ -6,7 +6,7 @@ def strtolatex(f, state):
     name, exp = init(f,state)                               # создание элемента словаря если его нету
     endresult = exp                                         # Вычисление формулы
     while True:                                             #
-        print('en > ' + endresult)
+        #print('en > ' + endresult)
         if is_digit(endresult):                             #
             print(name + ' > ' + endresult)
             putvalue(name, float(endresult), state)         #
@@ -26,6 +26,8 @@ def checked(name, state):                                   # Функция п�
 
 def getvalue(name, state, pos = 0):
     viewl = view.view(name)
+    if name == "Pi":
+        return math.pi
     if not checked(name, state):
         state[name] = {
             'view' : str(viewl),
@@ -34,6 +36,7 @@ def getvalue(name, state, pos = 0):
     lst = state[name]['value']
     if lst[0] == 0:
         val = float(input('Введите: ' + name + ' >'))
+        state['stdin'].append(val)
         lst[0] += 1
         lst.append(val)
         return val
@@ -197,6 +200,7 @@ def finalstr(name, exp, state):
         if findstr is not None:
             ltexp = ltexp.replace(findstr.group(0), findstr.group(1) + state[k]['view'] + findstr.group(3))
     ltexp = ltexp.replace('*', '')
+    ltexp = correct_degree(ltexp)
     numexp = exp
     for k in state.keys():
         regexp = r'((?:\W|^))(' + k + r')((?:\W|$))'
@@ -204,7 +208,9 @@ def finalstr(name, exp, state):
         if findstr is not None:
             numexp = numexp.replace(findstr.group(0), findstr.group(1) + str(numbertols(getvalue(k, state))) + findstr.group(3))
     numexp = numexp.replace('*', ' \cdot ')
-    result = state[name]['view'] + ' = ' + ltexp + ' = ' + numexp + '=' + str(numbertols(getvalue(name, state)))
+    numexp = correct_degree(numexp)
+    result = state[name]['view'] + ' = ' + ltexp.replace('(', '\\left(').replace(')', '\\right)') + \
+        ' = ' + numexp.replace('(', '\\left(').replace(')', '\\right)') + '=' + str(numbertols(getvalue(name, state)))
     del tmpdict
     return result
 
@@ -218,7 +224,7 @@ def exptolatex(exp, tmpdict): # надо сделать корень
             tmpdict['exp' + str(i)] = '\\sqrt{' + tmpdict[rsobj.group(2)][1:-1] + '}'
             exp = exp.replace(rsobj.group(0), 'exp' + str(i))
             i += 1
-        elif re.search(r'lnexp\d+', exp) is not None: #корень
+        elif re.search(r'lnexp\d+', exp) is not None: #ln
             rsobj = re.search(r'(ln)(exp\d+)', exp)
             tmpdict['exp' + str(i)] = '\\ln{' + tmpdict[rsobj.group(2)][1:-1] + '}'
             exp = exp.replace(rsobj.group(0), 'exp' + str(i))
@@ -252,9 +258,18 @@ def var_in_text(text,state):
             if re.search(r'(\w+)=', sp_exp.group(1)) is not None:
                 name = re.search(r'(\w+)=', sp_exp.group(1)).group(1)
                 val = float(input('Введите уточненный '+ name + ' > '))
+                state['stdin'].append(val)
                 putvalue(name, val, state)
-                res_str = state[name]['view'] + ' = ' + str(numbertols(val))
+                res_str = '$' + state[name]['view'] + ' = ' + str(numbertols(val)) + '$'
                 text = text.replace(sp_exp.group(0), res_str)
         else:
             break
     return text
+
+def correct_degree(exp):
+    while True:
+        if re.search(r'\^\(.+\)', exp) is not None:
+            exp = exp.replace(re.search(r'\^\(.+\)', exp).group(0), re.search(r'\^\(.+\)', exp).group(0).replace('(', '{').replace(')', '}'))
+        else:
+            break
+    return exp
