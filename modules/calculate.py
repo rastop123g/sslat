@@ -3,7 +3,13 @@ import math
 from . import view
 
 def strtolatex(f, state):
-    name, exp = init(f,state)                               # создание элемента словаря если его нету
+    arr_form = f.split('%')
+    try:
+        unit = arr_form[1]
+        unit = text_to_unit_latex(unit)
+    except IndexError:
+        unit = ''
+    name, exp = init(arr_form[0],state)                               # создание элемента словаря если его нету
     endresult = exp                                         # Вычисление формулы
     while True:                                             #
         #print('en > ' + endresult)
@@ -13,7 +19,7 @@ def strtolatex(f, state):
             break                                           #
         else:                                               #
             endresult = calc(endresult, state)              #
-    retstr = finalstr(name, exp, state)
+    retstr = finalstr(name, exp, unit, state)
     return retstr
 
 def checked(name, state):                                   # Функция проверки имени в словаре
@@ -187,69 +193,37 @@ def numbertols(num): # Перевод числа в latex с округлени�
         st = str(result) + ' \cdot 10^{' + str(n-1) + '}'
         return str(signed + st)
 
-def finalstr(name, exp, state):
+def finalstr(name, exp, unit, state):
     tmpdict = {}
-    exp = exptolatex(exp, tmpdict)
+    exp = exp.replace('**', '^')
+    exp = view.exptolatex(exp, tmpdict)
     while re.search(r'exp\d+', exp):
         rp = re.search(r'exp\d+', exp).group(0)
         exp = exp.replace(rp, tmpdict[rp])
     ltexp = exp
     for k in state.keys():
-        regexp = r'((?:\W|^))(' + k + r')((?:\W|$))'
-        findstr = re.search(regexp, ltexp)
-        if findstr is not None:
-            ltexp = ltexp.replace(findstr.group(0), findstr.group(1) + state[k]['view'] + findstr.group(3))
+        regexp = r'((?:[^t][^e][^x][^t]\W|[^e][^x][^t]\W|[^x][^t]\W|[^t]\W|^))(' + k + r')((?:\W|$))'
+        while True:
+            findstr = re.search(regexp, ltexp)
+            if findstr is not None:
+                ltexp = ltexp.replace(findstr.group(0), findstr.group(1) + state[k]['view'] + findstr.group(3))
+            else:
+                break
     ltexp = ltexp.replace('*', '')
-    ltexp = correct_degree(ltexp)
     numexp = exp
     for k in state.keys():
-        regexp = r'((?:\W|^))(' + k + r')((?:\W|$))'
-        findstr = re.search(regexp, numexp)
-        if findstr is not None:
-            numexp = numexp.replace(findstr.group(0), findstr.group(1) + str(numbertols(getvalue(k, state))) + findstr.group(3))
+        regexp = r'((?:[^t][^e][^x][^t]\W|[^e][^x][^t]\W|[^x][^t]\W|[^t]\W|^))(' + k + r')((?:\W|$))'
+        while True:
+            findstr = re.search(regexp, numexp)
+            if findstr is not None:
+                numexp = numexp.replace(findstr.group(0), findstr.group(1) + '{' + str(numbertols(getvalue(k, state))) + '}' + findstr.group(3))
+            else:
+                break
     numexp = numexp.replace('*', ' \cdot ')
-    numexp = correct_degree(numexp)
-    result = state[name]['view'] + ' = ' + ltexp.replace('(', '\\left(').replace(')', '\\right)') + \
-        ' = ' + numexp.replace('(', '\\left(').replace(')', '\\right)') + '=' + str(numbertols(getvalue(name, state)))
+    result = state[name]['view'] + ' = ' + ltexp + \
+        ' = ' + numexp + '=' + str(numbertols(getvalue(name, state))) + '\\text{ }' + unit
     del tmpdict
     return result
-
-def exptolatex(exp, tmpdict): # надо сделать корень
-    i = 0
-    while True:
-        if re.search(r'\*\*', exp) is not None: # степень
-            exp = exp.replace('**', '^')
-        elif re.search(r'sqrtexp\d+', exp) is not None: #корень
-            rsobj = re.search(r'(sqrt)(exp\d+)', exp)
-            tmpdict['exp' + str(i)] = '\\sqrt{' + tmpdict[rsobj.group(2)][1:-1] + '}'
-            exp = exp.replace(rsobj.group(0), 'exp' + str(i))
-            i += 1
-        elif re.search(r'lnexp\d+', exp) is not None: #ln
-            rsobj = re.search(r'(ln)(exp\d+)', exp)
-            tmpdict['exp' + str(i)] = '\\ln{' + tmpdict[rsobj.group(2)][1:-1] + '}'
-            exp = exp.replace(rsobj.group(0), 'exp' + str(i))
-            i += 1
-        elif re.search(r'\([^()/]+\)', exp) is not None: # скобки
-            rsobj = re.search(r'\(([^()]+)\)', exp)
-            tmpdict['exp' + str(i)] = '(' + rsobj.group(1) + ')'
-            exp = exp.replace(tmpdict['exp' + str(i)], 'exp' + str(i))
-            i += 1
-        elif re.search(r'\w+\.?\d*/\w+\.?\d*', exp) is not None: # тоже деление
-            rsobj = re.search(r'(\w+\.?\d*)/(\w+\.?\d*)', exp)
-            if re.search(r'exp\d+', rsobj.group(1)) is not None:
-                onefr = tmpdict[rsobj.group(1)][1:-1]
-            else:
-                onefr = rsobj.group(1)
-            if re.search(r'exp\d+', rsobj.group(2)) is not None:
-                twofr = tmpdict[rsobj.group(2)][1:-1]
-            else:
-                twofr = rsobj.group(2)
-            tmpdict['exp' + str(i)] = '\\frac{' + onefr + '}{' + twofr + '}'
-            exp = exp.replace(rsobj.group(1) + '/' + rsobj.group(2), 'exp' + str(i))
-            i += 1
-        else:
-            break
-    return exp
 
 def var_in_text(text,state):
     while True:
@@ -266,10 +240,19 @@ def var_in_text(text,state):
             break
     return text
 
-def correct_degree(exp):
-    while True:
-        if re.search(r'\^\(.+\)', exp) is not None:
-            exp = exp.replace(re.search(r'\^\(.+\)', exp).group(0), re.search(r'\^\(.+\)', exp).group(0).replace('(', '{').replace(')', '}'))
-        else:
-            break
-    return exp
+#def correct_degree(exp):
+#    while True:
+#        if re.search(r'\^\([^frac]+\)', exp) is not None:
+#            exp = exp.replace(re.search(r'\^\([^frac]+\)', exp).group(0), re.search(r'\^\([^frac]+\)', exp).group(0).replace('(', '{').replace(')', '}'))
+#        else:
+#            break
+#    return exp
+
+def text_to_unit_latex(unit):
+    unit = unit.replace('**', '^')
+    unit = unit.replace('*', '\\cdot')
+    if re.search(r'[а-яА-Я]+', unit) is not None:
+        arr = re.findall(r'[а-яА-Я]+', unit)
+        for k in arr:
+            unit = unit.replace(k, '\\text{' + k + '}')
+    return unit

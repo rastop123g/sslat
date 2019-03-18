@@ -50,7 +50,7 @@ for s in block:
 prstr = ''
 for i in result_text:
     prstr += i
-prstr = fix(prstr)
+prstr = view.fix(prstr)
 file = open('stdin.txt', 'w')
 for va in state['stdin']:
     file.write(str(va) + '\n')
@@ -63,21 +63,3 @@ file = open(sys.argv[2], 'w')
 file.write(res.replace('$$content$$', prstr))
 file.close()
 print('Mission complete!')
-
-def fix(lat):
-    while True:
-        if re.search(r'\^\d+\.?\d*',lat) is not None:
-            searobj = re.search('\^(\d+\.?\d*)',lat)
-            lat = lat.replace(searobj.group(0), '^{' + searobj.group(1) + '}')
-        elif re.search(r'\d+\.?\d* \cdot 10\^\{\d+\}\^\{\d+\.?\d*\}', lat) is not None:
-            searobj = re.search(r'(\d+\.?\d* \cdot 10\^\{\d+\})\^\{\d+\.?\d*\}', lat)
-            lat = lat.replace(searobj.group(0), searobj.group(0).replace(searobj.group(1), '{' + searobj.group(1) + '}'))
-        elif re.search(r'\(\\frac\{.+\}\{.+\}\)\^\(\\frac\{.+\}\{.+\}\)', lat) is not None:
-            searobj = re.search(r'\((\\frac\{.+\}\{.+\})\)\^\(\\frac\{(.+)\}\{(.+)\}\)', lat)
-            if searobj.group(2) == '1':
-                lat = lat.replace(searobj.group(0), '\\sqrt[' + searobj.group(3) + ']{' + searobj.group(1) + '}')
-            else: 
-                lat = lat.replace(searobj.group(0), '{\\sqrt[' + searobj.group(3) + ']{' + searobj.group(1) + '}' + '}^{' + searobj.group(2) + '}')
-        else:
-            break
-    return lat
