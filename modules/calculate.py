@@ -213,10 +213,15 @@ def finalstr(name, exp, unit, state):
     numexp = exp
     for k in state.keys():
         regexp = r'((?:[^t][^e][^x][^t]\W|[^e][^x][^t]\W|[^x][^t]\W|[^t]\W|^))(' + k + r')((?:\W|$))'
+        obj_name = re.search(r'([a-zA-Zа-яА-Я0-9ёЁ]+)_?([a-zA-Zа-яА-Я0-9ёЁ]*)_?([a-zA-Zа-яА-Я0-9ёЁ]*)', k)
+        if obj_name.group(2) is not '':
+            plus_index = '_{ }'
+        else:
+            plus_index = ''
         while True:
             findstr = re.search(regexp, numexp)
             if findstr is not None:
-                numexp = numexp.replace(findstr.group(0), findstr.group(1) + '{' + str(numbertols(getvalue(k, state))) + '}' + findstr.group(3))
+                numexp = numexp.replace(findstr.group(0), findstr.group(1) + '{' + str(numbertols(getvalue(k, state))) + '}' + plus_index + findstr.group(3))
             else:
                 break
     numexp = numexp.replace('*', ' \cdot ')
@@ -239,14 +244,6 @@ def var_in_text(text,state):
         else:
             break
     return text
-
-#def correct_degree(exp):
-#    while True:
-#        if re.search(r'\^\([^frac]+\)', exp) is not None:
-#            exp = exp.replace(re.search(r'\^\([^frac]+\)', exp).group(0), re.search(r'\^\([^frac]+\)', exp).group(0).replace('(', '{').replace(')', '}'))
-#        else:
-#            break
-#    return exp
 
 def text_to_unit_latex(unit):
     unit = unit.replace('**', '^')

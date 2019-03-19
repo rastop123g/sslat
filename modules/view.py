@@ -66,7 +66,7 @@ def exptolatex(exp, tmpdict):
                 twofr = tmpdict[rsobj.group(2)][1:-1]
             else:
                 twofr = rsobj.group(2)
-            tmpdict['exp' + str(i)] = '\\frac{' + onefr + '}{' + twofr + '}'
+            tmpdict['exp' + str(i)] = '\\dfrac{' + onefr + '}{' + twofr + '}'
             exp = exp.replace(rsobj.group(1) + '/' + rsobj.group(2), 'exp' + str(i))
             i += 1
         else:
@@ -75,8 +75,8 @@ def exptolatex(exp, tmpdict):
 
 def fix(lat):
     while True:
-        if re.search(r'\{\(\\frac\{.+?\}\{.+?\}\)\}\^\{\(\\frac\{.+?\}\{.+?\}\)\}', lat) is not None:
-            searobj = re.search(r'\{\((\\frac\{.+?\}\{.+?\})\)\}\^\{\(\\frac\{(.+?)\}\{(.+?)\}\)\}', lat)
+        if re.search(r'\{\(\\dfrac\{.+?\}\{.+?\}\)\}\^\{\(\\dfrac\{.+?\}\{.+?\}\)\}', lat) is not None:
+            searobj = re.search(r'\{\((\\dfrac\{.+?\}\{.+?\})\)\}\^\{\(\\dfrac\{(.+?)\}\{(.+?)\}\)\}', lat)
             if searobj.group(2) == '1':
                 lat = lat.replace(searobj.group(0), '\\sqrt[' + searobj.group(3) + ']{' + searobj.group(1) + '}')
             else: 
