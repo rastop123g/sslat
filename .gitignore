@@ -8,3 +8,4 @@
 modules/__pycache__/calculate.cpython-37.pyc
 .vscode/c_cpp_properties.json
 *.txt
+test.py
