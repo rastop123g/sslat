@@ -1,65 +1,71 @@
 import re
 import sys
-from modules import calculate, view
+import os
+from modules import state_app, calculate, view, text_manipulation
+
+state = state_app.state
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
+cwd_path = os.getcwd()
+new_path = cwd_path + '/' + sys.argv[2] + '/'
+
+state['dir_path'], state['cwd_path'], state['new_path'] = dir_path, cwd_path, new_path
+
+if not os.path.exists(new_path):
+    os.makedirs(new_path)
 
 file = open(sys.argv[1], 'r')
 block = file.read().split("\n\n")
 file.close()
 del file
-state = {
-    'blablabla' : {
-        'view' : 'Представление',
-        'value' : [0]
-    },
-    'stdin': []
-}
-views = re.search(r'view{(.+)}', block[len(block) - 1].replace('\n', '').replace('    ', '').replace('  ', '')).group(1)
-view.initview_of_sec(views, state)
+
+try:
+    file = open(sys.argv[3], 'r')
+    state['input'] = file.read().split('\n')
+except IndexError:
+    state['input'] = []
+
+try:
+    views = re.search(r'view{(.+)}', block[len(block) - 1].replace('\n', '').replace('    ', '').replace('  ', '')).group(1)
+    view.initview_of_sec(views)
+except AttributeError:
+    pass
+
 result_text = []
 for s in block:
     rst = s.replace('\n', '').replace('    ', '').replace('  ', '')
-    #rst = s.replace('    ', '').replace('  ', '')
-    if re.match(r'^#\s*', rst) is not None: # обработка заголовков на #
-        clearstr = re.findall(r'^#\s*(.+)', rst)
-        result_string = r'\section{' + clearstr[0] + '}\n\n'
+    if re.search(r'^##\s*', rst) is not None: # обработка заголовков на ##
+        clearstr = re.search(r'^##\s*(.+)', rst).group(1)
+        result_string = r'\subsection{' + clearstr + '}\n\n'
         result_text.append(result_string)
         del clearstr, result_string
-    elif re.match(r'^view{', rst) is not None: # блокировка view
+    elif re.search(r'^#\s*', rst) is not None: # обработка заголовков на #
+        clearstr = re.search(r'^#\s*(.+)', rst).group(1)
+        result_string = r'\section{' + clearstr + '}\n\n'
+        result_text.append(result_string)
+        del clearstr, result_string
+    elif re.search(r'^view{', rst) is not None: # блокировка view
         continue
-    elif re.match(r'^##\s*', rst) is not None: # обработка заголовков на ##
-        clearstr = re.findall(r'^##\s*(.+)', rst)
-        result_string = r'\subsection{' + clearstr[0] + '}\n\n'
+    elif re.search(r'^\{', rst) is not None: # обработка формулы
+        clearstr = re.search(r'^\{\n*(.+)\n*\}', rst).group(1)
+        result_string = '$$' + calculate.entry_one_exp(clearstr) + '$$' + '\n\n'
         result_text.append(result_string)
         del clearstr, result_string
-    elif re.match(r'^\{', rst) is not None: # обработка формулы
-        clearstr = re.findall(r'^\{\n*(.+)\n*\}', rst)
-        result_string = '$$' + calculate.strtolatex(clearstr[0], state) + '$$' + '\n\n'
-        result_text.append(result_string)
-        del clearstr, result_string
-    elif re.match(r'^\s*\w+', rst) is not None: # обработка простого текста 
+    elif re.search(r'^\s*\w+', rst) is not None: # обработка простого текста 
         text = re.search(r'^\s*\w+.*', rst).group(0)
-        rst = calculate.var_in_text(text, state)
+        rst = text_manipulation.var_in_text(text)
         result_string = rst + '\n\n'
         result_text.append(result_string)
         del result_string
-
     del rst
-# del block
-# block = k
-# del k
 prstr = ''
 for i in result_text:
     prstr += i
-prstr = view.fix(prstr)
-file = open('stdin.txt', 'w')
-for va in state['stdin']:
-    file.write(str(va) + '\n')
-file.close()
-file = open('template.tex', 'r')
+file = open(dir_path + '/template.tex', 'r')
 res = file.read()
 file.close()
 del file
-file = open(sys.argv[2], 'w')
+file = open(new_path + 'out.tex', 'w')
 file.write(res.replace('$$content$$', prstr))
 file.close()
 print('Mission complete!')
