@@ -113,7 +113,7 @@ def finalstr(name, exp, unit):
                 numexp = numexp.replace(findstr.group(0), findstr.group(1) + '{' + str(numbertols(state_app.getvalue(k))) + '}' + plus_index + findstr.group(3))
             else:
                 break
-    numexp = numexp.replace('*', ' \cdot ')
+    numexp = numexp.replace('*', ' \\cdot ')
     result = state[name]['view'] + ' = ' + ltexp + \
         ' = ' + numexp + '=' + str(numbertols(state_app.getvalue(name))) + '\\text{ }' + unit
     result = fix(result)
@@ -139,7 +139,7 @@ def numbertols(num):
     if n >= 4:
         sm = num / (10 ** (n-1))
         result = round(sm, 2)
-        st = str(result) + ' \cdot 10^{' + str(n-1) + '}'
+        st = str(result) + ' \\cdot 10^{' + str(n-1) + '}'
         return str(signed + st)
     elif n >= -1:
         result = round(num, 3 - n)
@@ -149,7 +149,7 @@ def numbertols(num):
     else:
         sm = num / (10 ** (n-1))
         result = round(sm, 2)
-        st = str(result) + ' \cdot 10^{' + str(n-1) + '}'
+        st = str(result) + ' \\cdot 10^{' + str(n-1) + '}'
         return str(signed + st)
 
 def fix(lat):
