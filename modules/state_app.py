@@ -3,7 +3,17 @@ state = {
         'view' : 'Представление',
         'value' : [0]
     },
-    'stdin': []
+    'stdin': [],
+    'sets': {
+        'namesets' : {
+            'xadasd' : {
+                'view' : 'Представление',
+                'value' : [0]
+            },
+            'ysdgsbst' : {}
+        }
+    },
+    'views' : {}
 }
 
 from . import debug_app, view
@@ -12,7 +22,8 @@ import math
 def checked(name):
     """Проверка существует ли переменная в словаре"""
     global state
-    for k in state.keys():
+    inst = state['instance']
+    for k in inst.keys():
         if name == k:
             return True
         else:
@@ -22,15 +33,16 @@ def checked(name):
 def getvalue(name, pos = 0):
     """Получение значения из словаря по имени"""
     global state
+    inst = state['instance']
     viewl = view.view(name)
     if name == "Pi":
         return math.pi
     if not checked(name):
-        state[name] = {
+        inst[name] = {
             'view' : str(viewl),
             'value' : [0]
         }
-    lst = state[name]['value']
+    lst = inst[name]['value']
     if lst[0] == 0:
         val = f_inp('Введите: ',name)
         state['stdin'].append(val)
@@ -43,14 +55,15 @@ def getvalue(name, pos = 0):
 def putvalue(name, val):
     """Добавить значение в словарь по имени, добавляет в конец списка 'value'"""
     global state
+    inst = state['instance']
     viewl = view.view(name)
     if not checked(name):
-        state[name] = {
+        inst[name] = {
             'view' : str(viewl),
             'value' : [0]
         }
-    state[name]['value'][0] += 1
-    state[name]['value'].append(val)
+    inst[name]['value'][0] += 1
+    inst[name]['value'].append(val)
 
 def f_inp(text, name):
     """Запрос неизвестного значения 
@@ -60,7 +73,6 @@ def f_inp(text, name):
     
     """
     global state
-    print(state['input'])
     try:
         res = float(state['input'][0])
         print(name + ' > ' + str(res))
@@ -75,6 +87,7 @@ def f_inp(text, name):
 def init(f):
     """Создание эллемента в state с view и списком value значением"""
     global state
+    inst = state['instance']
     f = str(f)
     arr = f.split('=')
     for i in range(len(arr)):
@@ -84,7 +97,7 @@ def init(f):
     del arr
     viewl = view.view(name)
     if not checked(name):
-        state[name] = {
+        inst[name] = {
             'view' : viewl,
             'value' : [0]
         }

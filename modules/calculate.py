@@ -1,4 +1,5 @@
 import re
+import logging
 import math
 from . import view, state_app
 
@@ -14,6 +15,7 @@ def entry_one_exp(f):
     except IndexError:
         unit = ''
     name, exp = state_app.init(arr_form[0])
+    logging.info('exp >' + exp)
     computed = exp
     while True:
         if is_digit(computed):

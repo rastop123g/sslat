@@ -10,26 +10,29 @@ def initview_of_sec(vsec):
     for item in arr:
         name = item.split('=')[0].strip()
         elview = item.split('=')[1].strip().replace('"', '')
-        state[name] = {
-            'view' : elview,
-            'value' : [0]
-        }
+        state["views"].update({name : elview})
 
 def view(name):
     """Обработка имен создание latex строки из имени переменной"""
-    searchobj = re.search(r'([a-zA-Zа-яА-Я0-9ёЁ]+)_?([a-zA-Zа-яА-Я0-9ёЁ]*)_?([a-zA-Zа-яА-Я0-9ёЁ]*)', name)
-    result = '\\text{' + searchobj.group(1) + '}'
-    if searchobj.group(3):
-        if searchobj.group(3) == 'l':
-            result +=  '^{\\prime}'
-        elif searchobj.group(3) == 'll':
-            result +=  '^{\\prime\\prime}'
-        else:
-            result +=  '^\\text{' + searchobj.group(3) + '}'
-    if searchobj.group(2):
-        result += '_\\text{' + searchobj.group(2) + '}'
-    #print(result)
-    return '{' + result + '}'
+    global state
+    if name in state["views"].keys():
+        return '{' + state["views"][name] + '}'
+    else:
+        searchobj = re.search(r'([a-zA-Zа-яА-Я0-9ёЁ]+)_?([a-zA-Zа-яА-Я0-9ёЁ]*)_?([a-zA-Zа-яА-Я0-9ёЁ]*)', name)
+        result = '\\text{' + searchobj.group(1) + '}'
+        if searchobj.group(3):
+            if searchobj.group(3) == 'l':
+                result +=  '^{\\prime}'
+            elif searchobj.group(3) == 'll':
+                result +=  '^{\\prime\\prime}'
+            elif searchobj.group(3) == 'lll':
+                result += '^{\\prime\\prime\\prime}'
+            else:
+                result +=  '^\\text{' + searchobj.group(3) + '}'
+        if searchobj.group(2):
+            result += '_\\text{' + searchobj.group(2) + '}'
+        #print(result)
+        return '{' + result + '}'
 
 def exptolatex(exp, tmpdict):
     """Перевод формулы в latex формулу строку"""
@@ -83,6 +86,7 @@ def exptolatex(exp, tmpdict):
 def finalstr(name, exp, unit):
     """Создание финальной строки вида name = exp = digit_exp = num unit"""
     global state
+    inst = state['instance']
     tmpdict = {}
     exp = exp.replace('**', '^')
     exp = exptolatex(exp, tmpdict)
@@ -90,17 +94,17 @@ def finalstr(name, exp, unit):
         rp = re.search(r'exp\d+', exp).group(0)
         exp = exp.replace(rp, tmpdict[rp])
     ltexp = exp
-    for k in state.keys():
+    for k in inst.keys():
         regexp = r'((?:[^t][^e][^x][^t][^\w\\]|[^e][^x][^t][^\w\\]|[^x][^t][^\w\\]|[^t][^\w\\]|[+\-*/=^]|^))(' + k + r')((?:\W|$))'
         while True:
             findstr = re.search(regexp, ltexp)
             if findstr is not None:
-                ltexp = ltexp.replace(findstr.group(0), findstr.group(1) + state[k]['view'] + findstr.group(3))
+                ltexp = ltexp.replace(findstr.group(0), findstr.group(1) + inst[k]['view'] + findstr.group(3))
             else:
                 break
     ltexp = ltexp.replace('*', '')
     numexp = exp
-    for k in state.keys():
+    for k in inst.keys():
         regexp = r'((?:[^t][^e][^x][^t][^\w\\]|[^e][^x][^t][^\w\\]|[^x][^t][^\w\\]|[^t][^\w\\]|[+\-*/=^]|^))(' + k + r')((?:\W|$))'
         obj_name = re.search(r'([a-zA-Zа-яА-Я0-9ёЁ]+)_?([a-zA-Zа-яА-Я0-9ёЁ]*)_?([a-zA-Zа-яА-Я0-9ёЁ]*)', k)
         if obj_name.group(2) is not '':
@@ -114,7 +118,7 @@ def finalstr(name, exp, unit):
             else:
                 break
     numexp = numexp.replace('*', ' \\cdot ')
-    result = state[name]['view'] + ' = ' + ltexp + \
+    result = inst[name]['view'] + ' = ' + ltexp + \
         ' = ' + numexp + '=' + str(numbertols(state_app.getvalue(name))) + '\\text{ }' + unit
     result = fix(result)
     del tmpdict
