@@ -11,7 +11,8 @@ state = {
                 'value' : [0]
             },
             'ysdgsbst' : {}
-        }
+        },
+        'countsets' : 0
     },
     'views' : {}
 }
@@ -38,11 +39,22 @@ def getvalue(name, pos = 0):
     if name == "Pi":
         return math.pi
     if not checked(name):
-        inst[name] = {
-            'view' : str(viewl),
-            'value' : [0]
-        }
-    lst = inst[name]['value']
+        if inst == state:
+            inst[name] = {
+                'view' : str(viewl),
+                'value' : [0]
+            }
+    try:
+        lst = inst[name]['value']
+    except KeyError:
+        try:
+            lst = state[name]['value']
+        except KeyError:
+            state[name] = {
+                'view' : str(viewl),
+                'value' : [0]
+            }
+            lst = state[name]['value']
     if lst[0] == 0:
         val = f_inp('Введите: ',name)
         state['stdin'].append(val)
@@ -102,3 +114,19 @@ def init(f):
             'value' : [0]
         }
     return (name, exp)
+
+def ChangeInst(inst='state', *, name=False):
+    """Меняет инстанс расчета"""
+    global state
+    if inst == 'state':
+        state['instance'] = state
+    elif inst == 'sets':
+        if name == False:
+            state['sets']['countsets'] += 1
+            name = str(state['sets']['countsets'])
+        try:
+            if type(state['sets'][name]) == dict:
+                state['instance'] = state['sets'][name]
+        except KeyError:
+            state['sets'][name] = {}
+            state['instance'] = state['sets'][name]

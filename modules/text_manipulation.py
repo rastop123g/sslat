@@ -1,10 +1,12 @@
 import re
+import logging as log
 from . import state_app, view
 
 state = state_app.state
 
 def var_in_text(text):
     """Обработка выражений вида {var} в блоке простого текста"""
+    log.info('мы попали в var in text > ' + text)
     global state
     inst = state['instance']
     while True:

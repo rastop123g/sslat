@@ -5,7 +5,7 @@ from . import view, state_app
 
 state = state_app.state
 
-def entry_one_exp(f):
+def entry_one_exp(f, * , latex_view=True):
     """Начало обработки блока формулы"""
     global state
     arr_form = f.split('%')
@@ -24,8 +24,12 @@ def entry_one_exp(f):
             break
         else:
             computed = calc(computed)
-    retstr = view.finalstr(name, exp, unit)
-    return retstr
+    if latex_view:
+        retstr = view.finalstr(name, exp, unit)
+        return retstr
+    else:
+        return None
+
 
 def calc(exp):
     """Вычесление выражения"""
